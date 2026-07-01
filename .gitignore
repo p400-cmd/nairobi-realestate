@@ -7,3 +7,6 @@ data/raw/listings_raw.csv
 models/
 *.pkl
 .ipynb_checkpoints/
+*.html
+debug_*.html
+data/raw/*.html
