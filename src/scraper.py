@@ -5,13 +5,13 @@ from datetime import datetime
 import random
 import os
 
-# ─── CONFIGURATION ────────────────────────────────────────────────────────────
+# CONFIGURATION
 
 BASE_URL = BASE_URL = "https://www.buyrentkenya.com/flats-apartments-for-sale"
 OUTPUT_PATH = "data/raw/listings_raw.csv"
 MAX_PAGES = 50
 
-# ─── BROWSER SETUP ────────────────────────────────────────────────────────────
+# BROWSER SETUP
 
 async def create_browser(playwright):
     browser = await playwright.chromium.launch(
@@ -29,13 +29,10 @@ async def create_browser(playwright):
     )
     return browser, context
 
-# ─── DATA EXTRACTOR ───────────────────────────────────────────────────────────
+# DATA EXTRACTOR
 
 async def extract_card_data(card, page):
-    """
-    card = the overlay <a> tag (a[class*="absolute left-0 top-0"])
-    All data lives in sibling elements — so we query card.parentElement
-    """
+
     data = {}
 
     async def safe_text(selector, card):
@@ -56,8 +53,6 @@ async def extract_card_data(card, page):
         except Exception:
             return None
 
-    # Get the parent element — all data lives here, not inside the overlay <a>
-
     # Title
     data['title'] = (
     await safe_text('h2.font-semibold', card) or
@@ -77,7 +72,7 @@ async def extract_card_data(card, page):
     # Bathrooms
     data['bathrooms'] = await safe_text('[data-cy="card-bathroom_count"]', card)
 
-    # Listing URL — from the overlay link itself
+    # Listing URL
     href = await safe_attr('a[id*="listing-link"]', 'href', card)
     if href:
         data['listing_url'] = "https://www.buyrentkenya.com" + href if not href.startswith('http') else href
@@ -91,7 +86,7 @@ async def extract_card_data(card, page):
 
     return data
 
-# ─── PAGE SCRAPER ─────────────────────────────────────────────────────────────
+# PAGE SCRAPER
 
 async def scrape_page(page, page_number):
     url = BASE_URL if page_number == 1 else f"{BASE_URL}?page={page_number}"
@@ -110,15 +105,13 @@ async def scrape_page(page, page_number):
         print(f"[Page {page_number}] Failed to load: {e}")
         return []
 
-    # Wait for listing cards to appear in the DOM
     try:
         await page.wait_for_selector('a[class*="absolute left-0 top-0"]', timeout=30000)
-        await asyncio.sleep(5)  # Extra wait for all 25 cards to fully render
+        await asyncio.sleep(5)
         print(f"[Page {page_number}] Listings detected in DOM")
     except Exception:
         print(f"[Page {page_number}] Listings never appeared after waiting.")
 
-    # Scroll to trigger lazy loading
     # Scroll slowly to trigger lazy loading of all cards
     for i in range(10):
         await page.evaluate(f"window.scrollTo(0, {i * 500})")
@@ -151,18 +144,18 @@ async def scrape_page(page, page_number):
     print(f"[Page {page_number}] Successfully extracted {len(listings)} listings")
     return listings
 
-# ─── PAGINATION CHECK ─────────────────────────────────────────────────────────
+# PAGINATION CHECK
 
 async def has_next_page(page, current_page):
     try:
-        # Find all pagination links and check if any points to current_page + 1
+        # Next page is current_page + 1
         next_page_url = f"?page={current_page + 1}"
         next_btn = await page.query_selector(f'a[href*="{next_page_url}"]')
         return next_btn is not None
     except Exception:
         return False
 
-# ─── MAIN ORCHESTRATOR ────────────────────────────────────────────────────────
+# MAIN ORCHESTRATOR
 
 async def scrape_all_listings(max_pages=MAX_PAGES):
     all_listings = []
@@ -204,7 +197,7 @@ async def scrape_all_listings(max_pages=MAX_PAGES):
 
     return df
 
-# ─── ENTRY POINT ──────────────────────────────────────────────────────────────
+# ENTRY POINT
 
 if __name__ == "__main__":
     asyncio.run(scrape_all_listings())
