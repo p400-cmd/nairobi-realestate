@@ -1,6 +1,6 @@
-from pathlib import Path
-
 import pandas as pd
+import numpy as np
+from pathlib import Path
 
 CLEAN_PATH = Path("data/processed/listings_clean.csv")
 FEATURES_PATH = Path("data/processed/listings_features.csv")
@@ -12,7 +12,7 @@ TIER_MAP = {
     "Kilimani": "Mid",
     "Syokimau": "Mid",
     "Parklands": "Mid",
-    "South B": "Affordable",
+    "South B": "Mid",
     "Kitisuru": "Mid",
     "Other": "Mid",
 }
@@ -28,23 +28,17 @@ def engineer_features(clean_path=CLEAN_PATH, out_path=FEATURES_PATH):
     df["tier"] = df["location"].map(TIER_MAP)
 
     tier_dummies = pd.get_dummies(df["tier"], prefix="tier", drop_first=True)
-    assert "tier_Affordable" not in tier_dummies.columns, (
-        "Reference category not dropped as expected"
-    )
+    assert "tier_Affordable" not in tier_dummies.columns, "Reference category not dropped as expected"
     df = pd.concat([df, tier_dummies.astype(int)], axis=1)
 
     df.to_csv(out_path, index=False)
     print(f"Features saved: {out_path}")
-    print(
-        df[
-            ["location", "tier"]
-            + list(tier_dummies.columns)
-            + ["bedrooms", "bed_bath_ratio"]
-        ].head(10)
-    )
+    print(df[["location", "tier"] + list(tier_dummies.columns) + ["bedrooms", "bed_bath_ratio"]].head(10))
     print("\nTier counts (flag n<10 as unreliable for coefficient interpretation):")
     print(df["tier"].value_counts())
-    print("\nLocation counts within tiers (South B n=2 -- treat its effect as noise):")
+    print("\nLocation counts within tiers (Kitisuru n=1, South B n=2, Parklands n=4 -- "
+          "all folded into Mid; individually unreliable but no longer distort a "
+          "standalone category coefficient):")
     print(df.groupby("tier")["location"].value_counts())
 
 
