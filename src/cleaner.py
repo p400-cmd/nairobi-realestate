@@ -82,17 +82,13 @@ def clean(raw_path: Path = RAW_PATH, clean_path: Path = CLEAN_PATH) -> pd.DataFr
     df = df.drop_duplicates(subset=["listing_url"])
     log.info(f"Dropped {before - len(df)} duplicate listings")
 
-    # Drop out-of-scope listings: coastal (Nyali/Diani/etc.) and Syokimau
-    # (Machakos County -- BuyRentKenya's location tagging is not a reliable
-    # proxy for actual county/city boundaries; verify manually, don't trust
-    # the site's own geo-labels, as Syokimau itself demonstrated).
     OUT_OF_SCOPE = ["Nyali", "Nyali Area", "Mtwapa", "Diani", "Kizingo", "Syokimau"]
     df = df[~df["location"].isin(OUT_OF_SCOPE)]
 
-    # Impute bedrooms/bathrooms with median per location
+    # replacing bedrooms/bathrooms with median per location
     for col in ["bedrooms", "bathrooms"]:
         df[col] = df.groupby("location")[col].transform(lambda x: x.fillna(x.median()))
-        df[col] = df[col].fillna(df[col].median())  # global fallback
+        df[col] = df[col].fillna(df[col].median())
         df[col] = df[col].astype(int)
 
     # Outlier removal on price

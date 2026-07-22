@@ -5,55 +5,6 @@ from pathlib import Path
 CLEAN_PATH = Path("data/processed/listings_clean.csv")
 FEATURES_PATH = Path("data/processed/listings_features.csv")
 
-# Tier assignment: data-driven where sample size allows, domain judgment only
-# as a last resort, explicitly flagged wherever n is too small to trust.
-#
-# Reliable anchors: Westlands (median 8.5M, n=1108), Kilimani (median 7.36M,
-# n=820).
-#
-# PREMIUM -- median well above both anchors, n large enough to trust (n>=4):
-#   Westlands        8.5M   n=1108  (original anchor)
-#   Muthaiga         39.0M  n=5
-#   Parklands        25.0M  n=9     -- CORRECTED from Mid (Phase 4 override
-#                     was made at n=4 with a then-unreliable 25.2M median;
-#                     n=9 now confirms the same magnitude -- this is a real,
-#                     repeatable signal, not noise. Revisiting a small-n
-#                     override once better data arrives is the same pattern
-#                     already applied to South B and the tier-significance
-#                     finding; it is not a reversal to be embarrassed about.
-#   General Mathenge  23.95M n=4
-#   Brookside         23.0M  n=9     -- also corrected from an earlier
-#                     Mid-by-fallback default; n=9 confirms well above anchor.
-#   Kiambu Road       14.45M n=4     -- confirms the earlier tentative
-#                     Premium assignment made with n=1.
-#   Gigiri            13.5M  n=4
-#
-# MID -- everything else, including several locations where the single
-# available data point actively CONTRADICTS common assumptions about the
-# area (e.g. Karen showing BELOW both anchors at n=1 -- almost certainly
-# because Karen's housing stock is dominated by standalone houses on large
-# plots, not apartments, so one atypical apartment listing is not
-# representative of "Karen" as a market). These are defaulted to Mid as the
-# conservative, least-assumption-laden choice, NOT because the data supports
-# a Mid classification -- there simply isn't enough data (n=1-3) to support
-# ANY classification. This is disclosed explicitly here and must be repeated
-# in the report: these are placeholders, not findings.
-#   Karen           6.5M   n=1   -- contradicts reputation as a premium area;
-#                   apartment submarket likely unrepresentative of the area
-#   Lower Kabete    4.1M   n=1
-#   Loresho         22.0M  n=1
-#   Valley Arcade   17.5M  n=2
-#   Spring Valley   39.5M  n=3   -- borderline; n still too thin to trust
-#                   despite the large median, kept at Mid pending more data
-#   Mombasa Road    36.5M  n=2   -- contradicts commercial/lower-income
-#                   reputation; likely one atypical luxury listing
-#   Eastleigh       28.5M  n=1   -- same caveat as Mombasa Road
-#   Embakasi        8.9M   n=1
-#   Ngong Road      10.3M  n=1
-#   Langata         10.0M  n=1
-#
-# Small-n locations folded into Mid from earlier phases (South B, Kitisuru,
-# Syokimau-excluded) remain Mid per the established precedent.
 TIER_MAP = {
     "Westlands": "Premium",
     "Muthaiga": "Premium",

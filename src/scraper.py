@@ -11,20 +11,8 @@ from playwright.async_api import async_playwright
 BASE_URL = "https://www.buyrentkenya.com/flats-apartments-for-sale/nairobi?sort=latest"
 OUTPUT_PATH = "data/raw/listings_raw.csv"
 MAX_PAGES = 150
-# NOTE on BASE_URL:
-#   - /nairobi scopes to BuyRentKenya's Nairobi tag. This is NOT a strict city
-#     boundary (it still includes some Kiambu/Machakos-adjacent listings, e.g.
-#     Kiambu Road, Syokimau) -- so the manual location exclusion list in
-#     cleaner.py is still required as a second layer, not optional.
-#   - ?sort=latest replaces the site's default "Featured" sort. Featured is a
-#     pay-for-placement ranking dominated by a handful of agencies (observed:
-#     Sarabi Listings, SRG Properties, VIVARA REAL ESTATE, Palmora Properties)
-#     who concentrate inventory in Westlands/Kilimani/Kileleshwa/Lavington.
-#     "latest" (chronological) is the closest thing to an unbiased ordering
-#     the site exposes.
 
 # BROWSER SETUP
-
 
 async def create_browser(playwright):
     browser = await playwright.chromium.launch(
@@ -40,18 +28,6 @@ async def create_browser(playwright):
     )
     return browser, context
 
-
-# JS EXTRACTION SCRIPT
-#
-# Runs entirely inside the browser in one synchronous pass over the current
-# DOM snapshot. This avoids the failure mode of grabbing Playwright element
-# handles up front and then querying them one at a time from Python with
-# `await` in between each -- on a Livewire-driven site (confirmed by
-# wire:ignore / wire:snapshot / wire:effects attributes seen in the page),
-# the DOM can be reactively re-rendered between handle acquisition and use,
-# silently invalidating handles for cards processed later in the loop. A
-# single page.evaluate() call reads everything at once, atomically, with no
-# such race possible.
 EXTRACT_ALL_CARDS_JS = """
 () => {
     const cards = Array.from(document.querySelectorAll('div.listing-card'));
@@ -116,7 +92,6 @@ EXTRACT_ALL_CARDS_JS = """
 
 
 async def extract_all_cards(page):
-    """Single atomic extraction pass over every card currently in the DOM."""
     raw_results = await page.evaluate(EXTRACT_ALL_CARDS_JS)
 
     listings = []
@@ -133,7 +108,6 @@ async def extract_all_cards(page):
 
 
 # PAGE SCRAPER
-
 
 async def scrape_page(page, page_number):
     url = BASE_URL if page_number == 1 else f"{BASE_URL}&page={page_number}"
@@ -167,8 +141,6 @@ async def scrape_page(page, page_number):
     with open("debug_page.html", "w", encoding="utf-8") as f:
         f.write(html)
 
-    # Single atomic extraction -- see EXTRACT_ALL_CARDS_JS docstring for why
-    # this replaces the previous per-card Python-side query loop.
     listings, failed_count, total_found = await extract_all_cards(page)
 
     print(f"[Page {page_number}] Found {total_found} listing cards")
@@ -186,7 +158,6 @@ async def scrape_page(page, page_number):
 
 # PAGINATION CHECK
 
-
 async def has_next_page(page, current_page):
     try:
         next_page_url = f"page={current_page + 1}"
@@ -197,7 +168,6 @@ async def has_next_page(page, current_page):
 
 
 # MAIN ORCHESTRATOR
-
 
 async def scrape_all_listings(max_pages=MAX_PAGES):
     all_listings = []
